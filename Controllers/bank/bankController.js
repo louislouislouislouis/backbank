@@ -5,7 +5,7 @@ const getLink = async (req, res, next) => {
   //let { uderId } = req.body;
   let userId = "unique-per-user";
   const url = process.env.PLAID_URL_LINKGENERATION;
-
+  console.log("err");
   const json = {
     client_id: process.env.PLAID_CLIENT_ID,
     secret: process.env.PLAID_SECRET,
