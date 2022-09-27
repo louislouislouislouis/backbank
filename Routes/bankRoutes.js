@@ -7,7 +7,7 @@ const checkAuth = require("../Middleware/auth");
 
 const bankController = require("../Controllers/bank/bankController");
 
-router.use(checkAuth);
+//router.use(checkAuth);
 router.post("/getLink", bankController.getLink);
 
 module.exports = router;
