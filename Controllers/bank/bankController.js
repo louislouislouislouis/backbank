@@ -59,7 +59,7 @@ const exchangePktoAccessToken = async (req, res, next) => {
     console.log(err);
   }
 
-  if (!rep.data.access_token) {
+  if (!rep.data && !rep.data.access_token) {
     const error = new HttpError("Error trying get accessToken", 500);
     return next(error);
   }
