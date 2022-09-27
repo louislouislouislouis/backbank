@@ -1,4 +1,5 @@
 const axios = require("axios");
+const HttpError = require("../../Model/util/httpErr");
 
 const getLink = async (req, res, next) => {
   // TO IMPLEMENT
@@ -30,7 +31,7 @@ const getLink = async (req, res, next) => {
     console.log(err);
   }
 
-  if (!rep.data.link_token) {
+  if (!rep || !rep.data || !rep.data.link_token) {
     const error = new HttpError("Error trying get link", 500);
     return next(error);
   }
@@ -59,7 +60,7 @@ const exchangePktoAccessToken = async (req, res, next) => {
     console.log(err);
   }
 
-  if (!rep.data && !rep.data.access_token) {
+  if (!rep || !rep.data || !rep.data.access_token) {
     const error = new HttpError("Error trying get accessToken", 500);
     return next(error);
   }
