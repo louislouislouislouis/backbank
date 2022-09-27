@@ -9,5 +9,6 @@ const bankController = require("../Controllers/bank/bankController");
 
 //router.use(checkAuth);
 router.post("/getLink", bankController.getLink);
+router.post("/exchangePktoAccessToken", bankController.exchangePktoAccessToken);
 
 module.exports = router;
