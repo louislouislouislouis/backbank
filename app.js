@@ -2,6 +2,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 
+//Db
+const mongoose = require("mongoose");
+
 //Custom Error
 const HttpError = require("./Model/util/httpErr");
 
@@ -39,5 +42,14 @@ app.use((error, req, res, next) => {
   res.status(error.code || 500);
   res.json({ message: error.message || "An unknow error appears" });
 });
-
-app.listen(process.env.PORT || 5001);
+mongoose
+  .connect(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@bankcluster.kqmei0f.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
+  )
+  .then(() => {
+    console.log("conneted");
+    app.listen(process.env.PORT || 5001);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
