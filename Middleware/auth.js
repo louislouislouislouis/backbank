@@ -4,8 +4,6 @@ const HttpError = require("../Model/util/httpErr");
 const jwt = require("jsonwebtoken");
 var admin = require("firebase-admin");
 const User = require("../Model/user");
-console.log(process.env.FIREBASE_CONFIG_private_key);
-
 const serviceAccount = {
   type: process.env.FIREBASE_CONFIG_type,
   project_id: process.env.FIREBASE_CONFIG_project_id,
@@ -52,9 +50,9 @@ module.exports = async (req, res, next) => {
       } else {
         userInDB = await new User({
           _id: user.id,
-          userMail: decodedToken.email,
-          userName: decodedToken.name,
-          userPhoto: decodedToken.userPhoto,
+          userMail: user.email,
+          userName: user.name,
+          userPhoto: user.userPhoto,
         });
       }
       let sess = await Mongoose.startSession();
