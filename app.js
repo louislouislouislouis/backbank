@@ -8,6 +8,9 @@ const mongoose = require("mongoose");
 //Custom Error
 const HttpError = require("./Model/util/httpErr");
 
+const bankroutes = require("./Routes/bankRoutes");
+
+//Code
 const app = express();
 app.use(bodyParser.json());
 
@@ -23,8 +26,6 @@ app.use((req, res, next) => {
   );
   next();
 });
-
-const bankroutes = require("./Routes/bankRoutes");
 
 app.use("/bank/", bankroutes);
 

@@ -1,12 +1,22 @@
 const axios = require("axios");
 const HttpError = require("../../Model/util/httpErr");
+const { validationResult } = require("express-validator");
+const Mongoose = require("mongoose");
+const User = require("../../Model/user");
 
 const getLink = async (req, res, next) => {
-  // TO IMPLEMENT
-  //let { uderId } = req.body;
-  let userId = "unique-per-user";
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    let msg = "";
+    errors.array().forEach((element) => {
+      msg += JSON.stringify(element);
+    });
+    return next(new HttpError(msg, 422));
+  }
+  console.log(req.user);
+  let userId = req.user.id;
   const url = process.env.PLAID_URL_LINKGENERATION;
-  console.log("err");
   const json = {
     client_id: process.env.PLAID_CLIENT_ID,
     secret: process.env.PLAID_SECRET,
@@ -39,8 +49,31 @@ const getLink = async (req, res, next) => {
   res.status(200).json({ tokenLink: rep.data.link_token });
 };
 
+const getAccessToken = async (req, res, next) => {
+  // TO IMPLEMENT
+  //let { uderId } = req.body;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    let msg = "";
+    errors.array().forEach((element) => {
+      msg += JSON.stringify(element);
+    });
+    return next(new HttpError(msg, 422));
+  }
+
+  let userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new HttpError("User Not Found", 422));
+
+  res.status(200).json({ accessToken: user.userBankToken || false });
+};
+
 const exchangePktoAccessToken = async (req, res, next) => {
   // TO IMPLEMENT
+
   let { publicToken } = req.body;
   const url = process.env.PLAID_URL_TOKENEXCHANGE;
   const json = {
@@ -64,8 +97,27 @@ const exchangePktoAccessToken = async (req, res, next) => {
     const error = new HttpError("Error trying get accessToken", 500);
     return next(error);
   }
+
+  let userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new HttpError("User Not Found", 422));
+
+  user.userBankToken = rep.data.access_token;
+  let sess = await Mongoose.startSession();
+  try {
+    sess.startTransaction();
+    await user.save({ session: sess });
+    await sess.commitTransaction();
+  } catch (err) {
+    sess.abortTransaction();
+    const error = new HttpError("Error trying put accessToken", 500);
+    return next(error);
+  }
+
   res.status(200).json({ access_token: rep.data.access_token });
 };
 
 exports.exchangePktoAccessToken = exchangePktoAccessToken;
 exports.getLink = getLink;
+exports.getAccessToken = getAccessToken;
