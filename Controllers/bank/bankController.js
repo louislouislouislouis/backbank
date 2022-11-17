@@ -3,7 +3,111 @@ const HttpError = require("../../Model/util/httpErr");
 const { validationResult } = require("express-validator");
 const Mongoose = require("mongoose");
 const User = require("../../Model/user");
+const dateFormat = require("dateformat");
 
+const getTransactionInfo = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    let msg = "";
+    errors.array().forEach((element) => {
+      msg += JSON.stringify(element);
+    });
+    return next(new HttpError(msg, 422));
+  }
+  console.log(req.user);
+  let userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new HttpError("User Not Found", 422));
+  if (!user.userBankToken)
+    return next(new HttpError("Not Found BankToken", 422));
+
+  const url = process.env.PLAID_URL_GETINFO;
+  const now = new Date();
+  const nowminus1 = new Date();
+  nowminus1.setFullYear(nowminus1.getFullYear() - 1);
+  // Basic usage
+  const nowFormated = dateFormat(now, "yyyy-mm-dd");
+  const nowminusFormated = dateFormat(nowminus1, "yyyy-mm-dd");
+  console.log(nowFormated);
+
+  const json = {
+    client_id: process.env.PLAID_CLIENT_ID,
+    secret: process.env.PLAID_SECRET,
+    access_token: user.userBankToken,
+    start_date: nowminusFormated,
+    end_date: nowFormated,
+    options: {
+      count: 500,
+      offset: 0,
+    },
+  };
+
+  let rep;
+  try {
+    rep = await axios.post(url, json, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err) {
+    console.log(err);
+  }
+  console.log(rep.data);
+
+  if (!rep || !rep.data) {
+    const error = new HttpError("Error trying get data", 500);
+    return next(error);
+  }
+
+  res.status(200).json({ data: rep.data });
+};
+const getBalanceInfo = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    let msg = "";
+    errors.array().forEach((element) => {
+      msg += JSON.stringify(element);
+    });
+    return next(new HttpError(msg, 422));
+  }
+  console.log(req.user);
+  let userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new HttpError("User Not Found", 422));
+  if (!user.userBankToken)
+    return next(new HttpError("Not Found BankToken", 422));
+
+  const url = process.env.PLAID_URL_GETBALANCE;
+
+  const json = {
+    client_id: process.env.PLAID_CLIENT_ID,
+    secret: process.env.PLAID_SECRET,
+    access_token: user.userBankToken,
+  };
+
+  let rep;
+  try {
+    rep = await axios.post(url, json, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err) {
+    console.log(err);
+  }
+  console.log(rep.data);
+
+  if (!rep || !rep.data) {
+    const error = new HttpError("Error trying get data", 500);
+    return next(error);
+  }
+
+  res.status(200).json({ data: rep.data });
+};
 const getLink = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -121,3 +225,5 @@ const exchangePktoAccessToken = async (req, res, next) => {
 exports.exchangePktoAccessToken = exchangePktoAccessToken;
 exports.getLink = getLink;
 exports.getAccessToken = getAccessToken;
+exports.getTransactionInfo = getTransactionInfo;
+exports.getBalanceInfo = getBalanceInfo;
