@@ -3,6 +3,7 @@ const HttpError = require("../../Model/util/httpErr");
 const { validationResult } = require("express-validator");
 const Mongoose = require("mongoose");
 const User = require("../../Model/user");
+const Objectif = require("../../Model/objectif");
 const dateFormat = require("dateformat");
 
 const getTransactionInfo = async (req, res, next) => {
@@ -222,6 +223,83 @@ const exchangePktoAccessToken = async (req, res, next) => {
   res.status(200).json({ access_token: rep.data.access_token });
 };
 
+const getObjectives = async (req, res, next) => {
+  let userId = req.user.id;
+  console.log(userId);
+
+  const objectives = await Objectif.find({ userId: userId });
+
+  if (!objectives) return next(new HttpError("objectives Not Found", 422));
+
+  res.status(200).json({
+    objectives: objectives.map((el) => el.toObject({ getters: true })),
+  });
+};
+
+const postObjectives = async (req, res, next) => {
+  let userId = req.user.id;
+  console.log(userId);
+  let { startDate, endDate, category, amount } = req.body;
+  if (
+    !startDate ||
+    !endDate ||
+    !category ||
+    !Array.isArray(category) ||
+    !amount
+  ) {
+    const error = new HttpError("Bad input", 500);
+    return next(error);
+  }
+  let objectif = new Objectif({
+    userId: userId,
+    startDate: startDate,
+    endDate: endDate,
+    category: category,
+    amount: amount,
+  });
+
+  const sess = await Mongoose.startSession();
+  try {
+    sess.startTransaction();
+    await objectif.save({ session: sess });
+    await sess.commitTransaction();
+  } catch (err) {
+    await sess.abortTransaction();
+    const error = new HttpError("Error saving objectif", 500);
+    return next(error);
+  }
+  res.status(200).json({
+    objectif: objectif.toObject({ getters: true }),
+  });
+};
+
+const deleteObjectif = async (req, res, next) => {
+  let userId = req.user.id;
+  console.log(userId);
+  let { objId } = req.body;
+  if (!objId) {
+    const error = new HttpError("Bad input", 500);
+    return next(error);
+  }
+
+  const sess = await Mongoose.startSession();
+  try {
+    sess.startTransaction();
+    await Objectif.deleteOne({ _id: objId, userId: userId }, { session: sess });
+    await sess.commitTransaction();
+  } catch (err) {
+    await sess.abortTransaction();
+    const error = new HttpError("Error deleting objectif", 500);
+    return next(error);
+  }
+  res.status(200).json({
+    status: "deleted",
+  });
+};
+exports.deleteObjectif = deleteObjectif;
+
+exports.postObjectives = postObjectives;
+exports.getObjectives = getObjectives;
 exports.exchangePktoAccessToken = exchangePktoAccessToken;
 exports.getLink = getLink;
 exports.getAccessToken = getAccessToken;

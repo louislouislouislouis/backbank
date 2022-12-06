@@ -8,6 +8,10 @@ const checkAuth = require("../Middleware/auth");
 const bankController = require("../Controllers/bank/bankController");
 
 router.use(checkAuth);
+router.get("/objectif", bankController.getObjectives);
+router.post("/objectif", bankController.postObjectives);
+router.delete("/objectif", bankController.deleteObjectif);
+
 router.post("/getLink", bankController.getLink);
 router.post("/getAccessToken", bankController.getAccessToken);
 router.post("/getTransactionInfo", bankController.getTransactionInfo);
